@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Audio - Multo Lyrics</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #222;
+            color: white;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #ff5252;
+        }
+        .lyric-display {
+            background: #333;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .current {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+        .next {
+            font-size: 18px;
+            color: #ccc;
+            margin-top: 10px;
+        }
+        .debug {
+            background: #111;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Test Lyrics Animation</h1>
+        
+        <div class="debug">
+            <strong>Debug Info:</strong><br>
+            Current Time: <span id="timeDisplay">0:00</span><br>
+            Current Index: <span id="indexDisplay">0</span><br>
+            Audio Status: <span id="statusDisplay">Not loaded</span>
+        </div>
+
+        <div class="lyric-display">
+            <div class="current" id="currentLyric">Hindi na makalaya</div>
+            <div class="next" id="nextLyric">Dinadalaw mo 'ko bawat gabi</div>
+        </div>
+
+        <div>
+            <button id="playPause">▶️ Play/Pause</button>
+            <button onclick="audio.currentTime = 0">⏮️ Reset</button>
+            <button onclick="audio.currentTime += 5">⏭️ +5s</button>
+            <button onclick="audio.currentTime -= 5">⏪ -5s</button>
+        </div>
+
+        <div>
+            <p><strong>Instructions:</strong></p>
+            <ul>
+                <li>Pastikan file audio ada di: <code>./assets/multo.mp3</code></li>
+                <li>Gunakan tombol Play untuk memulai</li>
+                <li>Lyrics akan berubah otomatis sesuai waktu</li>
+                <li>Gunakan tombol +5s/-5s untuk test timing</li>
+                <li>Tekan Spacebar untuk play/pause</li>
+            </ul>
+        </div>
+    </div>
+
+    <audio id="audio" src="./assets/multo.mp3"></audio>
+
+    <script>
+        // Same lyrics data
+        const lyrics = [
+            { lyric: "Hindi na makalaya", time: 0 },
+            { lyric: "Dinadalaw mo 'ko bawat gabi", time: 5 },
+            { lyric: "Wala mang nakikita", time: 8 },
+            { lyric: "Haplos mo'y ramdam pa rin sa dilim", time: 13 },
+            { lyric: "Hindi na nananaginip", time: 18 },
+            { lyric: "Hindi na ma-makagising", time: 21 },
+            { lyric: "Pasindi na ng ilaw", time: 23 },
+            { lyric: "Minumulto na 'ko ng damdamin ko", time: 25 },
+            { lyric: "Ng damdamin ko", time: 28 },
+            { lyric: "Hindi mo ba ako lilisanin?", time: 30 },
+            { lyric: "Hindi pa ba sapat pagpapahirap sa 'kin? (Damdamin ko...)", time: 32 },
+            { lyric: "Hindi na ba ma-mamamayapa?", time: 34 },
+            { lyric: "Hindi na ba ma-mamamayapa?", time: 36 },
+            { lyric: "Hindi na makalaya", time: 39 }
+        ];
+
+        const audio = document.getElementById('audio');
+        const playPauseBtn = document.getElementById('playPause');
+        const currentLyricEl = document.getElementById('currentLyric');
+        const nextLyricEl = document.getElementById('nextLyric');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const indexDisplay = document.getElementById('indexDisplay');
+        const statusDisplay = document.getElementById('statusDisplay');
+
+        let currentLyricIndex = 0;
+        let isPlaying = false;
+
+        // Update debug info
+        function updateDebugInfo() {
+            const currentTime = audio.currentTime;
+            const mins = Math.floor(currentTime / 60);
+            const secs = Math.floor(currentTime % 60);
+            timeDisplay.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+            indexDisplay.textContent = currentLyricIndex;
+            statusDisplay.textContent = isPlaying ? 'Playing' : 'Paused';
+        }
+
+        // Update lyrics
+        function updateLyrics(currentTime) {
+            for (let i = 0; i < lyrics.length; i++) {
+                if (currentTime >= lyrics[i].time && (i === lyrics.length - 1 || currentTime < lyrics[i + 1].time)) {
+                    if (currentLyricIndex !== i) {
+                        currentLyricIndex = i;
+                        updateLyricDisplay();
+                    }
+                    break;
+                }
+            }
+        }
+
+        function updateLyricDisplay() {
+            currentLyricEl.textContent = lyrics[currentLyricIndex].lyric;
+            
+            if (currentLyricIndex < lyrics.length - 1) {
+                nextLyricEl.textContent = lyrics[currentLyricIndex + 1].lyric;
+                nextLyricEl.style.display = 'block';
+            } else {
+                nextLyricEl.style.display = 'none';
+            }
+        }
+
+        // Event listeners
+        audio.addEventListener('timeupdate', function() {
+            updateLyrics(audio.currentTime);
+            updateDebugInfo();
+        });
+
+        audio.addEventListener('loadeddata', function() {
+            statusDisplay.textContent = 'Audio loaded successfully';
+        });
+
+        audio.addEventListener('error', function(e) {
+            statusDisplay.textContent = 'Error loading audio';
+            console.error('Audio error:', e);
+        });
+
+        playPauseBtn.addEventListener('click', function() {
+            if (isPlaying) {
+                audio.pause();
+            } else {
+                audio.play().catch(e => {
+                    console.error('Play error:', e);
+                    alert('Cannot play audio. Check if file exists at ./assets/multo.mp3');
+                });
+            }
+            isPlaying = !isPlaying;
+            updateDebugInfo();
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            if (e.key === ' ') {
+                e.preventDefault();
+                playPauseBtn.click();
+            }
+        });
+
+        // Initialize
+        updateLyricDisplay();
+        updateDebugInfo();
+    </script>
+</body>
+</html>
